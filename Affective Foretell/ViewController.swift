@@ -8,47 +8,83 @@
 import UIKit
 import ARKit
 
-class ViewController: UIViewController {
+private let planewidth: CGFloat = 0.36
+private let planeheight: CGFloat = 0.36
+private let nodeYPosition: Float = 0.020
+private let forecastImageView = UIImageView()
 
-    @IBOutlet weak var faceView: ARSCNView!
-    @IBOutlet weak var statusLabel: UILabel!
+class ViewController: UIViewController {
+    
+    @IBOutlet weak var sceneView: ARSCNView!
+
+    
+    private let forecastPlane = SCNPlane(width: planewidth, height: planeheight)
+    private let forecastNode = SCNNode()
+    
+    private let bgPlane = SCNPlane(width: planewidth, height: planeheight)
+    private let bgNode = SCNNode()
+
     override func viewDidLoad() {
         super.viewDidLoad()
-        faceView.delegate = self
-        guard ARFaceTrackingConfiguration.isSupported else {
-            statusLabel.text = "AR Face Detection is not supported"
-            return
-        }
+        sceneView.delegate = self
     }
+    
+    
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
         let configuration = ARFaceTrackingConfiguration()
-        faceView.session.run(configuration)
+        sceneView.session.run(configuration)
     }
+    
     override func viewWillDisappear(_ animated: Bool) {
         super.viewWillDisappear(animated)
-        faceView.session.pause()
+        sceneView.session.pause()
     }
     
-    
-    
-
 }
 
 extension ViewController: ARSCNViewDelegate {
+    
     func renderer(_ renderer: SCNSceneRenderer, nodeFor anchor: ARAnchor) -> SCNNode? {
-        guard let device = faceView.device else { return nil }
+        
+        guard let device = sceneView.device else {
+            return nil
+        }
+        
         let faceGeometry = ARSCNFaceGeometry(device: device)
         let faceNode = SCNNode(geometry: faceGeometry)
-        faceNode.geometry?.firstMaterial?.fillMode = .lines
+        //node.geometry?.firstMaterial?.fillMode = .lines
+        faceNode.geometry?.firstMaterial?.transparency = 0.0
+        
+        let gifImage = UIImage.gifImageWithName("ML")
+        let gifImageView = UIImageView(image: gifImage)
+        forecastPlane.firstMaterial?.diffuse.contents = gifImageView
+        forecastPlane.firstMaterial?.isDoubleSided = true
+        forecastNode.opacity = 0.7
+        forecastNode.position.z = faceNode.position.z
+        forecastNode.position.y = nodeYPosition
+        forecastNode.geometry = forecastPlane
+        
+        bgPlane.firstMaterial?.diffuse.contents = #imageLiteral(resourceName: "glow")
+        bgPlane.firstMaterial?.isDoubleSided = true
+        bgNode.position.z = faceNode.position.z - 0.0002
+        bgNode.position.y = nodeYPosition
+        bgNode.opacity = 0.7
+        bgNode.geometry = bgPlane
+        
+        faceNode.addChildNode(forecastNode)
+        faceNode.addChildNode(bgNode)
         return faceNode
     }
     
-    func renderer(_ renderer: SCNSceneRenderer, didUpdate node: SCNNode, for anchor: ARAnchor) {
-        guard let faceAncher = anchor as? ARFaceAnchor,
-        let faceGeometry = node.geometry as? ARSCNFaceGeometry else {
-            return
+    func renderer(
+        _ renderer: SCNSceneRenderer,
+        didUpdate node: SCNNode,
+        for anchor: ARAnchor) {
+        guard let faceAnchor = anchor as? ARFaceAnchor,
+            let faceGeometry = node.geometry as? ARSCNFaceGeometry else {
+                return
         }
-        faceGeometry.update(from: faceAncher.geometry)
+        faceGeometry.update(from: faceAnchor.geometry)
     }
 }
