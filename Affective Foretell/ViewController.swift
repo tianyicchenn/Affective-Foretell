@@ -67,7 +67,7 @@ extension ViewController: ARSCNViewDelegate {
         
         bgPlane.firstMaterial?.diffuse.contents = #imageLiteral(resourceName: "glow")
         bgPlane.firstMaterial?.isDoubleSided = true
-        bgNode.position.z = faceNode.position.z - 0.0002
+        bgNode.position.z = faceNode.position.z
         bgNode.position.y = nodeYPosition
         bgNode.opacity = 0.7
         bgNode.geometry = bgPlane
